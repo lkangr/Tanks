@@ -374,7 +374,6 @@ namespace Complete
         }
 
 
-        [ClientRpc]
         public void SetHealthUI()
         {
             // Set the slider's value appropriately.
@@ -402,18 +401,24 @@ namespace Complete
 
             // Turn the tank off.
             //gameObject.SetActive (false);
-            if (isLocalPlayer) Reset();
+            Reset();
         }
 
 
         // Used at the start of each round to put the tank into it's default state.
         public void Reset()
         {
-            spawnPosition = FindObjectOfType<NetworkManagerTank>().spawnPosition;
-            m_SpawnPoint = isServer ? spawnPosition[0] : spawnPosition[1];
+            if (isLocalPlayer)
+            {
+                spawnPosition = FindObjectOfType<NetworkManagerTank>().spawnPosition;
+                m_SpawnPoint = isServer ? spawnPosition[0] : spawnPosition[1];
 
-            transform.position = m_SpawnPoint.position;
-            transform.rotation = m_SpawnPoint.rotation;
+                transform.position = m_SpawnPoint.position;
+                transform.rotation = m_SpawnPoint.rotation;
+
+
+                GetComponent<Rigidbody>().velocity = Vector3.zero;
+            }
 
             // Also reset the input values.
             m_MovementInputValue = 0f;
@@ -427,9 +432,6 @@ namespace Complete
             {
                 m_particleSystems[i].Play();
             }
-
-
-            GetComponent<Rigidbody>().velocity = Vector3.zero;
 
 
             //m_Shooting.CallOnEnable();
