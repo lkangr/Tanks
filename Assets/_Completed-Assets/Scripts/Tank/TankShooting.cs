@@ -95,7 +95,7 @@ namespace Complete
             //shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward; 
 
             Vector3 velocity = m_CurrentLaunchForce * m_FireTransform.forward;
-            m_TankManager.Fire(velocity);
+            m_TankManager.FireS(velocity);
 
 
             // Change the clip to the firing clip and play it.
