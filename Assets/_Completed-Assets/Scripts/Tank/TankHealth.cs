@@ -13,11 +13,12 @@ namespace Complete
         public GameObject m_ExplosionPrefab;                // A prefab that will be instantiated in Awake, then used whenever the tank dies.
         
         
-        private AudioSource m_ExplosionAudio;               // The audio source to play when the tank explodes.
-        private ParticleSystem m_ExplosionParticles;        // The particle system the will play when the tank is destroyed.
-        private float m_CurrentHealth;                      // How much health the tank currently has.
-        private bool m_Dead;                                // Has the tank been reduced beyond zero health yet?
+        public AudioSource m_ExplosionAudio;               // The audio source to play when the tank explodes.
+        public ParticleSystem m_ExplosionParticles;        // The particle system the will play when the tank is destroyed.
+        public float m_CurrentHealth;                      // How much health the tank currently has.
+        public bool m_Dead;                                // Has the tank been reduced beyond zero health yet?
 
+        public TankManager m_TankManager;
 
         private void Awake ()
         {
@@ -32,7 +33,7 @@ namespace Complete
         }
 
 
-        private void OnEnable()
+        public void CallOnEnable()
         {
             // When the tank is enabled, reset the tank's health and whether or not it's dead.
             m_CurrentHealth = m_StartingHealth;
@@ -59,7 +60,7 @@ namespace Complete
         }
 
 
-        private void SetHealthUI ()
+        public void SetHealthUI ()
         {
             // Set the slider's value appropriately.
             m_Slider.value = m_CurrentHealth;
@@ -69,7 +70,7 @@ namespace Complete
         }
 
 
-        private void OnDeath ()
+        public void OnDeath ()
         {
             // Set the flag so that this function is only called once.
             m_Dead = true;
@@ -85,7 +86,8 @@ namespace Complete
             m_ExplosionAudio.Play();
 
             // Turn the tank off.
-            gameObject.SetActive (false);
+            //gameObject.SetActive (false);
+            m_TankManager.Reset();
         }
     }
 }

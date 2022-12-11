@@ -1,8 +1,9 @@
+using Mirror;
 using UnityEngine;
 
 namespace Complete
 {
-    public class ShellExplosion : MonoBehaviour
+    public class ShellExplosion : NetworkBehaviour
     {
         public LayerMask m_TankMask;                        // Used to filter what the explosion affects, this should be set to "Players".
         public ParticleSystem m_ExplosionParticles;         // Reference to the particles that will play on explosion.
@@ -13,13 +14,22 @@ namespace Complete
         public float m_ExplosionRadius = 5f;                // The maximum distance away from the explosion tanks can be and are still affected.
 
 
+        [ServerCallback]
         private void Start ()
         {
             // If it isn't destroyed by then, destroy the shell after it's lifetime.
-            Destroy (gameObject, m_MaxLifeTime);
+            //Destroy (gameObject, m_MaxLifeTime);
+            Invoke("DestroyG", m_MaxLifeTime);
         }
 
 
+        void DestroyG()
+        {
+            NetworkServer.Destroy(gameObject);
+        }
+
+
+        [ServerCallback]
         private void OnTriggerEnter (Collider other)
         {
 			// Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
@@ -28,28 +38,38 @@ namespace Complete
             // Go through all the colliders...
             for (int i = 0; i < colliders.Length; i++)
             {
-                // ... and find their rigidbody.
-                Rigidbody targetRigidbody = colliders[i].GetComponent<Rigidbody> ();
+                //// ... and find their rigidbody.
+                //Rigidbody targetRigidbody = colliders[i].GetComponent<Rigidbody> ();
 
-                // If they don't have a rigidbody, go on to the next collider.
-                if (!targetRigidbody)
-                    continue;
+                //// If they don't have a rigidbody, go on to the next collider.
+                //if (!targetRigidbody)
+                //    continue;
 
-                // Add an explosion force.
-                targetRigidbody.AddExplosionForce (m_ExplosionForce, transform.position, m_ExplosionRadius);
+                //// Add an explosion force.
+                //targetRigidbody.AddExplosionForce (m_ExplosionForce, transform.position, m_ExplosionRadius);
 
-                // Find the TankHealth script associated with the rigidbody.
-                TankHealth targetHealth = targetRigidbody.GetComponent<TankHealth> ();
+                //// Find the TankHealth script associated with the rigidbody.
+                //TankHealth targetHealth = targetRigidbody.GetComponent<TankHealth> ();
 
-                // If there is no TankHealth script attached to the gameobject, go on to the next collider.
-                if (!targetHealth)
-                    continue;
+                //// If there is no TankHealth script attached to the gameobject, go on to the next collider.
+                //if (!targetHealth)
+                //    continue;
 
-                // Calculate the amount of damage the target should take based on it's distance from the shell.
-                float damage = CalculateDamage (targetRigidbody.position);
+                //// Calculate the amount of damage the target should take based on it's distance from the shell.
+                //float damage = CalculateDamage (targetRigidbody.position);
 
-                // Deal this damage to the tank.
-                targetHealth.TakeDamage (damage);
+                //// Deal this damage to the tank.
+                //targetHealth.TakeDamage (damage);
+
+                TankManager targetTank = colliders[i].GetComponent<TankManager>();
+                if (targetTank)
+                {
+                    targetTank.AddExplosionForce(m_ExplosionForce, transform.position, m_ExplosionRadius);
+
+                    float damage = CalculateDamage(targetTank.GetComponent<Rigidbody>().position);
+
+                    targetTank.TakeDamage(damage);
+                }
             }
 
             // Unparent the particles from the shell.
@@ -63,10 +83,11 @@ namespace Complete
 
             // Once the particles have finished, destroy the gameobject they are on.
             ParticleSystem.MainModule mainModule = m_ExplosionParticles.main;
-            Destroy (m_ExplosionParticles.gameObject, mainModule.duration);
+            Destroy(m_ExplosionParticles.gameObject, mainModule.duration);
 
             // Destroy the shell.
-            Destroy (gameObject);
+            //Destroy (gameObject);
+            NetworkServer.Destroy(gameObject);
         }
 
 

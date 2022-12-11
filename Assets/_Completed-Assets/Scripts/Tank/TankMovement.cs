@@ -4,6 +4,7 @@ namespace Complete
 {
     public class TankMovement : MonoBehaviour
     {
+        public TankManager m_TankManager;
         public int m_PlayerNumber = 1;              // Used to identify which tank belongs to which player.  This is set by this tank's manager.
         public float m_Speed = 12f;                 // How fast the tank moves forward and back.
         public float m_TurnSpeed = 180f;            // How fast the tank turns in degrees per second.
@@ -26,7 +27,7 @@ namespace Complete
         }
 
 
-        private void OnEnable ()
+        public void CallOnEnable ()
         {
             // When the tank is turned on, make sure it's not kinematic.
             m_Rigidbody.isKinematic = false;
@@ -46,7 +47,7 @@ namespace Complete
         }
 
 
-        private void OnDisable ()
+        public void CallOnDisable ()
         {
             // When the tank is turned off, set it to kinematic so it stops moving.
             m_Rigidbody.isKinematic = true;
@@ -59,7 +60,7 @@ namespace Complete
         }
 
 
-        private void Start ()
+        public void CallStart ()
         {
             // The axes names are based on player number.
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
@@ -70,7 +71,7 @@ namespace Complete
         }
 
 
-        private void Update ()
+        public void CallUpdate ()
         {
             // Store the value of both input axes.
             m_MovementInputValue = Input.GetAxis (m_MovementAxisName);
@@ -108,7 +109,7 @@ namespace Complete
         }
 
 
-        private void FixedUpdate ()
+        public void CallFixedUpdate ()
         {
             // Adjust the rigidbodies position and orientation in FixedUpdate.
             Move ();
