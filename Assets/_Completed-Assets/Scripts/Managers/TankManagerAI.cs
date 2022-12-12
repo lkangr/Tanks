@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 
 namespace Complete
 {
-    public class TankManager : NetworkBehaviour
+    public class TankManagerAI : NetworkBehaviour
     {
         public Transform[] spawnPosition;
 
@@ -93,8 +93,9 @@ namespace Complete
 
         private void Update()
         {
-            if (isLocalPlayer)
+            if (isServer)
             {
+                return;
                 //m_Movement.CallUpdate();
                 // Store the value of both input axes.
                 m_MovementInputValue = Input.GetAxis(m_MovementAxisName);
@@ -215,15 +216,16 @@ namespace Complete
         }
 
 
+        [ServerCallback]
         private void FixedUpdate()
         {
-            if (isLocalPlayer)
-            {
+            //if (isServer)
+            //{
                 //m_Movement.CallFixedUpdate();
                 // Adjust the rigidbodies position and orientation in FixedUpdate.
                 Move();
                 Turn();
-            }
+            //}
         }
 
 
@@ -406,10 +408,10 @@ namespace Complete
         // Used at the start of each round to put the tank into it's default state.
         public void Reset()
         {
-            if (isLocalPlayer)
+            if (isServer)
             {
                 spawnPosition = FindObjectOfType<NetworkManagerTank>().spawnPosition;
-                m_SpawnPoint = isServer ? spawnPosition[0] : spawnPosition[1];
+                m_SpawnPoint = spawnPosition[2];
 
                 transform.position = m_SpawnPoint.position;
                 transform.rotation = m_SpawnPoint.rotation;
@@ -462,7 +464,7 @@ namespace Complete
         [ClientRpc]
         public void AddExplosionForce(float m_ExplosionForce, Vector3 position, float m_ExplosionRadius)
         {
-            if (isLocalPlayer)
+            if (isServer)
                 GetComponent<Rigidbody>().AddExplosionForce(m_ExplosionForce, position, m_ExplosionRadius);
         }
 

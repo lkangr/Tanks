@@ -4,6 +4,16 @@ using UnityEngine;
 public class NetworkManagerTank : NetworkManager
 {
     public Transform[] spawnPosition;
+    public GameObject AITank;
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+
+        GameObject aiTank = Instantiate(AITank, spawnPosition[2].position, spawnPosition[2].rotation);
+
+        NetworkServer.Spawn(aiTank);
+    }
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {

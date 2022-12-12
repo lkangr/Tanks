@@ -70,6 +70,18 @@ namespace Complete
 
                     targetTank.TakeDamage(damage);
                 }
+                else
+                {
+                    TankManagerAI aiTargetTank = colliders[i].GetComponent<TankManagerAI>();
+                    if (aiTargetTank)
+                    {
+                        aiTargetTank.AddExplosionForce(m_ExplosionForce, transform.position, m_ExplosionRadius);
+
+                        float damage = CalculateDamage(aiTargetTank.GetComponent<Rigidbody>().position);
+
+                        aiTargetTank.TakeDamage(damage);
+                    }
+                }
             }
 
             // Unparent the particles from the shell.
@@ -89,7 +101,6 @@ namespace Complete
             //Destroy (gameObject);
             NetworkServer.Destroy(gameObject);
         }
-
 
         private float CalculateDamage (Vector3 targetPosition)
         {
