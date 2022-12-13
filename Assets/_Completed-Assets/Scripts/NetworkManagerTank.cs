@@ -1,3 +1,4 @@
+using Complete;
 using Mirror;
 using UnityEngine;
 
@@ -6,6 +7,9 @@ public class NetworkManagerTank : NetworkManager
     public Transform[] spawnPosition;
     public GameObject AITank;
 
+    public Transform[] itemSpawnPosition;
+    public GameObject itemPrefab;
+
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -13,6 +17,8 @@ public class NetworkManagerTank : NetworkManager
         GameObject aiTank = Instantiate(AITank, spawnPosition[2].position, spawnPosition[2].rotation);
 
         NetworkServer.Spawn(aiTank);
+
+        InvokeRepeating("SpawnItem", 10f, 10f);
     }
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
@@ -31,5 +37,10 @@ public class NetworkManagerTank : NetworkManager
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
         base.OnServerDisconnect(conn);
+    }
+
+    public void SpawnItem()
+    {
+        Item.SpawnItem();
     }
 }

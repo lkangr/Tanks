@@ -75,6 +75,7 @@ namespace Complete
         public float m_CurrentHealth;                      // How much health the tank currently has.
         public bool m_Dead;                                // Has the tank been reduced beyond zero health yet?
 
+        private float reduceDamage = 1f;
 
         private void Awake()
         {
@@ -212,6 +213,15 @@ namespace Complete
 
             // The rate that the launch force charges up is the range of possible forces by the max charge time.
             m_ChargeSpeed = (m_MaxLaunchForce - m_MinLaunchForce) / m_MaxChargeTime;
+
+            if (isLocalPlayer)
+            {
+                var camera = FindObjectOfType<Camera>();
+                camera.transform.SetParent(transform);
+                camera.transform.localPosition = new Vector3(0, 2.5f, 0);
+                camera.transform.localRotation = Quaternion.Euler(Vector3.zero);
+                camera.orthographic = false;
+            }
         }
 
 
@@ -359,7 +369,7 @@ namespace Complete
         public void TakeDamage(float amount)
         {
             // Reduce current health by the amount of damage done.
-            m_CurrentHealth -= amount;
+            m_CurrentHealth -= amount * reduceDamage;
 
             // Change the UI elements appropriately.
             SetHealthUI();
@@ -369,6 +379,13 @@ namespace Complete
             {
                 OnDeath();
             }
+        }
+
+
+        [ClientRpc]
+        public void Boost()
+        {
+            reduceDamage = Mathf.Max(0.1f, reduceDamage - 0.1f);
         }
 
 
@@ -421,6 +438,8 @@ namespace Complete
             // Also reset the input values.
             m_MovementInputValue = 0f;
             m_TurnInputValue = 0f;
+
+            reduceDamage = 1;
 
             // We grab all the Particle systems child of that Tank to be able to Stop/Play them on Deactivate/Activate
             // It is needed because we move the Tank when spawning it, and if the Particle System is playing while we do that

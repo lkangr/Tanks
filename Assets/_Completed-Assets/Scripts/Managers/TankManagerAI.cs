@@ -50,8 +50,8 @@ namespace Complete
         public AudioSource m_ShootingAudio;         // Reference to the audio source used to play the shooting audio. NB: different to the movement audio source.
         public AudioClip m_ChargingClip;            // Audio that plays when each shot is charging up.
         public AudioClip m_FireClip;                // Audio that plays when each shot is fired.
-        public float m_MinLaunchForce = 15f;        // The force given to the shell if the fire button is not held.
-        public float m_MaxLaunchForce = 30f;        // The force given to the shell if the fire button is held for the max charge time.
+        public float m_MinLaunchForce = 15f; //15       // The force given to the shell if the fire button is not held.
+        public float m_MaxLaunchForce = 30f; //40       // The force given to the shell if the fire button is held for the max charge time.
         public float m_MaxChargeTime = 0.75f;       // How long the shell can charge for before it is fired at max force.
 
 
@@ -75,6 +75,9 @@ namespace Complete
         public float m_CurrentHealth;                      // How much health the tank currently has.
         public bool m_Dead;                                // Has the tank been reduced beyond zero health yet?
 
+        private float reduceDamage = 1f;
+
+        private float shotDelay = 0;
 
         private void Awake()
         {
@@ -95,6 +98,43 @@ namespace Complete
         {
             if (isServer)
             {
+                var tank = FindOpponent();
+
+                if (tank)
+                {
+                    var angle = Vector3.SignedAngle(transform.forward, tank.position - transform.position, Vector3.up);
+
+                    if (angle > 50) m_TurnInputValue = 1f;
+                    else if (angle > 10) m_TurnInputValue = 0.5f;
+                    else if (angle > 5) m_TurnInputValue = 0.1f;
+                    else if (angle < -50) m_TurnInputValue = -1f;
+                    else if (angle < -10) m_TurnInputValue = -0.5f;
+                    else if (angle < -5) m_TurnInputValue = -0.1f;
+
+                    if (Mathf.Abs(angle) < 10)
+                    {
+                        var distance = Vector3.Distance(transform.position, tank.position);
+
+                        if (distance > 35) m_MovementInputValue = 1;
+                        else if (distance < 20) m_MovementInputValue = -1;
+                        else m_MovementInputValue = 0;
+
+                        if (distance >= 15 && distance <= 40 && shotDelay <= 0)
+                        {
+                            shotDelay = 2f;
+                            m_CurrentLaunchForce = m_MinLaunchForce + (((distance - 15) / 25) * 15);
+                            Fire();
+                        }
+                    }
+                }
+                else
+                {
+                    m_TurnInputValue = 0;
+                    m_MovementInputValue = 0;
+                }
+
+                if (shotDelay > 0) shotDelay -= Time.deltaTime;
+
                 return;
                 //m_Movement.CallUpdate();
                 // Store the value of both input axes.
@@ -141,6 +181,33 @@ namespace Complete
             }
 
             EngineAudio();
+        }
+
+
+        public Transform FindOpponent()
+        {
+            var tanks = FindObjectsOfType<TankManager>();
+            int idx = -1;
+            float minDis = 99999999999999;
+            for (int i = 0; i < tanks.Length; i++)
+            {
+                var des = transform.position;
+                des.y = 1;
+                var tar = tanks[i].transform.position;
+                tar.y = 1;
+                RaycastHit hit;
+                if (Physics.Raycast(des, tar - des, out hit))
+                {
+                    var tank = hit.transform.GetComponent<TankManager>();
+                    if (tank && hit.distance < minDis)
+                    {
+                        idx = i;
+                        minDis = hit.distance;
+                    }
+                }
+            }
+            //Debug.Log(idx);
+            return idx == -1 ? null : tanks[idx].transform;
         }
 
 
@@ -216,16 +283,15 @@ namespace Complete
         }
 
 
-        [ServerCallback]
         private void FixedUpdate()
         {
-            //if (isServer)
-            //{
+            if (isServer)
+            {
                 //m_Movement.CallFixedUpdate();
-                // Adjust the rigidbodies position and orientation in FixedUpdate.
+                //Adjust the rigidbodies position and orientation in FixedUpdate.
                 Move();
                 Turn();
-            //}
+            }
         }
 
 
@@ -361,7 +427,7 @@ namespace Complete
         public void TakeDamage(float amount)
         {
             // Reduce current health by the amount of damage done.
-            m_CurrentHealth -= amount;
+            m_CurrentHealth -= amount * reduceDamage;
 
             // Change the UI elements appropriately.
             SetHealthUI();
@@ -371,6 +437,13 @@ namespace Complete
             {
                 OnDeath();
             }
+        }
+
+
+        [ClientRpc]
+        public void Boost()
+        {
+            reduceDamage = Mathf.Max(0.1f, reduceDamage - 0.1f);
         }
 
 
@@ -424,6 +497,8 @@ namespace Complete
             m_MovementInputValue = 0f;
             m_TurnInputValue = 0f;
 
+            reduceDamage = 1;
+
             // We grab all the Particle systems child of that Tank to be able to Stop/Play them on Deactivate/Activate
             // It is needed because we move the Tank when spawning it, and if the Particle System is playing while we do that
             // it "think" it move from (0,0,0) to the spawn point, creating a huge trail of smoke
@@ -449,7 +524,7 @@ namespace Complete
             SetHealthUI();
         }
 
-        [Command]
+        [ServerCallback]
         public void FireS(Vector3 velocity)
         {
             Rigidbody shellInstance =
